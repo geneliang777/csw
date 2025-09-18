@@ -1,0 +1,288 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯專案 - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+    <style>
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 95%;
+            max-width: none;
+            height: 95%;
+            max-height: none;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            background: #6c757d;
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .modal-body {
+            height: calc(100% - 60px);
+            overflow: hidden;
+        }
+        
+        .modal-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .modal-overlay.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content.show {
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { 
+                opacity: 0;
+                transform: translate(-50%, -60%);
+            }
+            to { 
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+        
+        /* Prevent body scroll when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-search" style="color: #3498db; margin-right: 0.5rem;"></i>
+            編輯專案
+        </h1>
+
+        <form method="get" action="" class="search-form">
+            <input type="text" name="q" value="{{ q }}" placeholder="輸入『專案代碼 or 專案名稱』關鍵字..." />
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                搜尋
+            </button>
+            <a class="btn btn-success" href="/project/new">
+                <i class="fas fa-plus"></i>
+                新增專案
+            </a>
+        </form>
+
+        {% if results %}
+            <div class="info">
+                <i class="fas fa-info-circle"></i>
+                找到 {{ results|length }} 個符合條件的專案
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-code"></i> 專案代碼</th>
+                        <th><i class="fas fa-project-diagram"></i> 專案名稱</th>
+                        <th><i class="fas fa-brain"></i> LLM 模型</th>
+                        <th><i class="fas fa-cogs"></i> 操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.project_code }}</strong>
+                        </td>
+                        <td>{{ item.name }}</td>
+                        <td>
+                            <span style="background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                {{ item.llm_model }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a class="btn btn-primary" href="{% url 'project_edit' pk=item.pk %}">
+                                    <i class="fas fa-edit"></i>
+                                    編輯
+                                </a>
+                                <a class="btn btn-secondary" href="#" onclick="openModal('{% url 'project_import' pk=item.pk %}', '{{ item.name }}'); return false;">
+                                    <i class="fas fa-upload"></i>
+                                     資料維護
+                                </a>
+                                <a class="btn btn-success" href="{% url 'project_test' pk=item.pk %}">
+                                    <i class="fas fa-play"></i>
+                                    測試
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                {% if q %}
+                    <i class="fas fa-search" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 1rem;"></i>
+                    <h3>找不到符合條件的專案</h3>
+                    <p>搜尋關鍵字：「<strong>{{ q }}</strong>」</p>
+                    <p>請嘗試其他關鍵字或檢查拼寫是否正確</p>
+                {% else %}
+                    <i class="fas fa-folder-open" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 1rem;"></i>
+                    <h3>尚未建立任何專案</h3>
+                    <p>請點擊「新增專案」按鈕開始建立您的第一個專案</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="nav-links">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                回上頁
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-menu"></i>
+                回首頁
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal HTML -->
+    <div id="modalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">資料維護</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <iframe id="modalIframe" class="modal-iframe" src=""></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Auto-focus search input
+        document.querySelector('input[name="q"]').focus();
+
+        // Add search suggestions (if needed)
+        const searchInput = document.querySelector('input[name="q"]');
+        searchInput.addEventListener('input', function() {
+            if (this.value.length > 2) {
+                // Could add AJAX search suggestions here
+            }
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            // Close modal with Escape key
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Modal functions
+        function openModal(url, title) {
+            const modal = document.getElementById('modalOverlay');
+            const iframe = document.getElementById('modalIframe');
+            const modalTitle = document.getElementById('modalTitle');
+            
+            modalTitle.textContent = `資料維護 - ${title}`;
+            iframe.src = url;
+            
+            modal.classList.add('show');
+            document.body.classList.add('modal-open');
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('modalOverlay');
+            const iframe = document.getElementById('modalIframe');
+            
+            modal.classList.remove('show');
+            document.body.classList.remove('modal-open');
+            
+            // Clear iframe src after animation
+            setTimeout(() => {
+                iframe.src = '';
+            }, 300);
+        }
+        
+        // Close modal when clicking overlay
+        document.getElementById('modalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Listen for messages from iframe to close modal
+        window.addEventListener('message', function(e) {
+            if (e.data === 'closeModal') {
+                closeModal();
+            }
+        });
+
+    </script>
+</body>
+</html>

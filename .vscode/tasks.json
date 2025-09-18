@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "open-browser",
+            "type": "shell",
+            "command": "python -m webbrowser -t http://127.0.0.1:8000/login/"
+        }
+    ]
+}

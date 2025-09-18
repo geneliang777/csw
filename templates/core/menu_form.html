@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ action }}選單</title>
+</head>
+<body>
+    <h1>{{ action }}選單</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">{{ action }}</button>
+    </form>
+    <p><a href="{% url 'menu_list' %}">回選單維護</a></p>
+</body>
+</html>

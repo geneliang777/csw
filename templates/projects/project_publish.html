@@ -1,0 +1,130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>發佈專案 - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-search" style="color: #3498db; margin-right: 0.5rem;"></i>
+            發佈專案
+        </h1>
+
+        <form method="get" action="" class="search-form">
+            <input type="text" name="q" value="{{ q }}" placeholder="輸入『專案代碼 or 專案名稱』關鍵字..." />
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i>
+                搜尋
+            </button>
+            <a class="btn btn-success" href="/project/new">
+                <i class="fas fa-plus"></i>
+                新增專案
+            </a>
+        </form>
+
+        {% if results %}
+            <div class="info">
+                <i class="fas fa-info-circle"></i>
+                找到 {{ results|length }} 個符合條件的專案
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-code"></i> 專案代碼</th>
+                        <th><i class="fas fa-project-diagram"></i> 專案名稱</th>
+                        <th><i class="fas fa-brain"></i> LLM 模型</th>
+                        <th><i class="fas fa-cogs"></i> 操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td>
+                            <strong>{{ item.project_code }}</strong>
+                        </td>
+                        <td>{{ item.name }}</td>
+                        <td>
+                            <span style="background: #e3f2fd; color: #1976d2; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                {{ item.llm_model }}
+                            </span>
+                        </td>
+                        <td>
+                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <a class="btn btn-primary" href="{% url 'project_export_project_sql' pk=item.pk %}">
+                                    <i class="fas fa-edit"></i>
+                                    專案匯出
+                                </a>
+                                <a class="btn btn-primary" href="{% url 'project_export_sql' pk=item.pk %}">
+                                    <i class="fas fa-edit"></i>
+                                    資料匯出
+                                </a>
+                                <a class="btn btn-primary" href="{% url 'project_export_example_html' pk=item.pk %}">
+                                    <i class="fas fa-edit"></i>
+                                    範例程式匯出
+                                </a>
+                            {% comment %}    <a class="btn btn-success" href="#" onclick="window.open('{% url 'project_test' pk=item.pk %}', 'project_test_{{ item.pk }}', 'width=800,height=800,scrollbars=yes'); return false;">
+                                    <i class="fas fa-play"></i>
+                                    測試
+                                </a>
+                            </div> {% endcomment %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                {% if q %}
+                    <i class="fas fa-search" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 1rem;"></i>
+                    <h3>找不到符合條件的專案</h3>
+                    <p>搜尋關鍵字：「<strong>{{ q }}</strong>」</p>
+                    <p>請嘗試其他關鍵字或檢查拼寫是否正確</p>
+                {% else %}
+                    <i class="fas fa-folder-open" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 1rem;"></i>
+                    <h3>尚未建立任何專案</h3>
+                    <p>請點擊「新增專案」按鈕開始建立您的第一個專案</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <div class="nav-links">
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                回上頁
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-menu"></i>
+                回首頁
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Auto-focus search input
+        document.querySelector('input[name="q"]').focus();
+
+        // Add search suggestions (if needed)
+        const searchInput = document.querySelector('input[name="q"]');
+        searchInput.addEventListener('input', function() {
+            if (this.value.length > 2) {
+                // Could add AJAX search suggestions here
+            }
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案詳情 - {{ obj.name }} - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-project-diagram" style="color: #3498db; margin-right: 0.5rem;"></i>
+            {{ obj.name }}
+        </h1>
+
+        <div class="project-info">
+            <div class="info-card">
+                <h4><i class="fas fa-code"></i> 專案代碼</h4>
+                <p>{{ obj.project_code }}</p>
+            </div>
+            
+            <div class="info-card">
+                <h4><i class="fas fa-brain"></i> LLM 模型</h4>
+                <p>{{ obj.llm_model }}</p>
+            </div>
+            
+            <div class="info-card">
+                <h4><i class="fas fa-cogs"></i> 向量化引擎</h4>
+                <p>{{ obj.embedding_engine }}</p>
+            </div>
+        </div>
+
+        {% if obj.description %}
+        <div class="info-card">
+            <h4><i class="fas fa-align-left"></i> 專案描述</h4>
+            <p>{{ obj.description }}</p>
+        </div>
+        {% endif %}
+
+        <div class="info-card">
+            <h4><i class="fas fa-user-tag"></i> 角色指令定義</h4>
+            <pre>{{ obj.role_prompt }}</pre>
+        </div>
+
+        <div class="info-card">
+            <h4><i class="fas fa-file-alt"></i> 回應模板配置</h4>
+            <pre>{{ obj.response_template }}</pre>
+        </div>
+
+        <div class="info-card">
+            <h4><i class="fas fa-lightbulb"></i> 範例提示詞</h4>
+            <pre>{{ obj.example_prompts }}</pre>
+        </div>
+
+        <div class="nav-links">
+            <a href="/project/new" class="btn btn-primary">
+                <i class="fas fa-plus"></i>
+                新增另一個專案
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                回上頁
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <i class="fas fa-menu"></i>
+                回首頁
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Add copy functionality to code blocks
+        document.querySelectorAll('pre').forEach(pre => {
+            pre.style.position = 'relative';
+            pre.style.cursor = 'pointer';
+            
+            pre.addEventListener('click', function() {
+                const text = this.textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    // Show temporary success message
+                    const originalBg = this.style.backgroundColor;
+                    this.style.backgroundColor = '#27ae60';
+                    setTimeout(() => {
+                        this.style.backgroundColor = originalBg;
+                    }, 500);
+                });
+            });
+            
+            // Add tooltip
+            pre.title = '點擊複製內容';
+        });
+    </script>
+</body>
+</html>

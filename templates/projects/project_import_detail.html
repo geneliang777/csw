@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢視匯入檔案 - {{ doc.filename }} - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>
+            檢視匯入檔案
+        </h1>
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="project-info">
+                <div class="info-card">
+                    <h4><i class="fas fa-file"></i> 檔案名稱</h4>
+                    <input type="text" name="filename" value="{{ doc.filename }}" />
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-project-diagram"></i> 專案ID</h4>
+                    <p>{{ doc.project.id }}</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-user"></i> 匯入人</h4>
+                    <p>{{ doc.imported_by }}</p>
+                </div>
+                
+                <div class="info-card">
+                    <h4><i class="fas fa-clock"></i> 匯入時間</h4>
+                    <p>{{ doc.imported_at|date:"Y-m-d H:i:s" }}</p>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <h4><i class="fas fa-align-left"></i> 檔案內容</h4>
+                <textarea name="content" rows="18" style="width:100%; box-sizing:border-box;">{{ doc.content }}</textarea>
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fas fa-save"></i>
+                        存檔（重新向量化）
+                    </button>
+                    <button type="button" onclick="copyFromTextarea()" class="btn btn-secondary">
+                        <i class="fas fa-copy"></i>
+                        複製內容
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <div class="nav-links">
+            <a href="{% url 'project_import' pk=project.pk %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i>
+                回上頁
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        function copyFromTextarea() {
+            const content = document.querySelector('textarea[name="content"]').value;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> 已複製';
+                btn.style.background = '#27ae60';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動選擇文字複製');
+            });
+        }
+    </script>
+</body>
+</html>

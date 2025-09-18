@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>首頁</title>
+    <link rel="stylesheet" href="{% static 'css/menu-simple.css' %}">
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- 新增：品牌區 -->
+      <a class="brand" href="{% url 'menu' %}" aria-label="品牌首頁">
+        {% comment %} <span class="brand-icon"></span> {% endcomment %}
+        <img src="{% static 'images/brand.png' %}" alt="品牌圖示" class="brand-icon-img" />
+        {% comment %} <span class="brand-text">CSW Console</span> {% endcomment %}
+      </a>
+
+      <h2>系統選單</h2>
+      <ul>
+        {% for menu in menus %}
+          <li>
+            <a href="{{ menu.url }}">{{ menu.title }}</a>
+
+            {% if menu.active_children %}
+              <ul>
+                {% for child in menu.active_children %}
+                  <li>
+                    <a href="{{ child.url }}">{{ child.title }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% endif %}
+          </li>
+        {% empty %}
+          <li>尚未建立任何選單</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      {% if user.is_authenticated %}
+        <p>
+          哈囉，{{ user.username }}！ <a href="{% url 'logout' %}">登出</a>
+        </p>
+      {% else %}
+        <p>
+          <a href="{% url 'login' %}">登入</a>
+        </p>
+      {% endif %}
+
+      <p>這裡是主要內容區域，你可以放各個功能頁。</p>
+    </div>
+  </body>
+</html>

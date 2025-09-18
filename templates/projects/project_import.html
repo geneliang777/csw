@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匯入檔案 - {{ project.name }} - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+    <style>
+        /* Page title styling */
+        h2 {
+            background: #6c757d;
+            color: white;
+            padding: 1rem 1.5rem;
+            margin: -2rem -2rem 2rem -2rem;
+            border-radius: 8px 8px 0 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>
+            <i class="fas fa-upload" style="color: #3498db; margin-right: 0.5rem;"></i>
+            資料維護 - {{ project.name }}
+        </h2>
+        <div class="actions">
+            <a class="btn btn-secondary" href="#" onclick="closeWindow();return false;">
+                <i class="fas fa-times"></i>
+                關閉視窗
+            </a>
+        </div>
+
+        {% if error %}
+            <div class="error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <h3>上傳檔案</h3>
+            <div class="upload-area">
+                {% comment %} <i class="fas fa-cloud-upload-alt" style="font-size: 3rem; color: #3498db; margin-bottom: 1rem;"></i> {% endcomment %}
+                <p>上傳檔案支援格式：PDF, DOCX, XLS, XLSX, CSV, TXT</p>
+                <input type="file" name="file" accept=".pdf,.docx,.xls,.xlsx,.csv,.txt" />
+                <div class="actions">
+                    <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-upload"></i>
+                    匯入檔案
+                </button>
+                </div>
+            </div>
+            <h3>資料爬蟲</h3>
+            <div class="upload-area">
+                <div class="actions">
+                    <a class="btn btn-primary" href="{% url 'project_crawl' pk=project.pk %}">
+                        <i class="fas fa-spider"></i>
+                        開始爬蟲
+                    </a>
+                </div>
+            </div>
+
+            <h3>手動輸入存檔</h3>
+            <div class="upload-area">
+                <div class="form-group">
+                    <label for="manual_title"><i class="fas fa-heading"></i> 標題</label>
+                    <input type="text" name="manual_title" placeholder="請輸入標題（選填）" />
+                </div>
+                <div class="form-group" style="margin-top:0.5rem;">
+                    <label for="manual_content"><i class="fas fa-file-alt"></i> 內容</label>
+                    <textarea name="manual_content" rows="8" placeholder="在此輸入要保存的文字..."></textarea>
+                </div>
+                <div class="actions" style="margin-top:0.5rem;">
+                    <button class="btn btn-primary" type="submit" name="action" value="manual_save">
+                        <i class="fas fa-save"></i>
+                        存檔
+                    </button>
+                </div>
+            </div>
+
+            {% comment %} <div class="form-group">
+                <label for="path">
+                    <i class="fas fa-folder-open"></i>
+                    或輸入伺服器路徑（選填）
+                </label>
+                <input type="text" name="path" placeholder="例如 /data/files/doc.pdf" />
+            </div>  {% endcomment %}
+
+        </form>
+
+        
+        <h3>
+            <i class="fas fa-list" style="color: #2c3e50; margin-right: 0.5rem;"></i>
+            已匯入資料
+        </h3>
+
+        <div class="actions" style="margin-bottom: 1rem;">
+            <a class="btn btn-primary" href="{% url 'project_export_sql' pk=project.pk %}">
+                <i class="fas fa-download"></i>
+                資料匯出（SQL/ZIP）
+            </a>
+        </div>
+
+        {% if documents %}
+            <table>
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag"></i> ID</th>
+                        <th><i class="fas fa-project-diagram"></i> 專案ID</th>
+                        <th><i class="fas fa-file"></i> 檔名</th>
+                        <th><i class="fas fa-user"></i> 匯入人</th>
+                        <th><i class="fas fa-clock"></i> 匯入時間</th>
+                        <th><i class="fas fa-cogs"></i> 操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in documents %}
+                    <tr>
+                        <td>{{ d.id }}</td>
+                        <td>{{ d.project.id }}</td>
+                        <td>
+                            <i class="fas fa-file-alt" style="color: #3498db; margin-right: 0.5rem;"></i>
+                            {{ d.filename }}
+                        </td>
+                        <td>{{ d.imported_by }}</td>
+                        <td>{{ d.imported_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <a class="btn btn-primary btn-fixed" href="{% url 'project_import_detail' pk=project.pk doc_pk=d.pk %}">
+                                <i class="fas fa-eye"></i>
+                                查看
+                            </a>
+                            <form action="{% url 'project_import_delete' pk=project.pk doc_pk=d.pk %}" method="post" style="display:inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger btn-fixed" onclick="return confirm('確定要刪除這個檔案嗎？')">
+                                    <i class="fas fa-trash"></i>
+                                    刪除
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="empty">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: #bdc3c7; margin-bottom: 1rem;"></i>
+                <h3>尚未匯入任何檔案</h3>
+                <p>請使用上方的表單上傳您的第一個檔案</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // File upload preview
+        {% comment %} document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const uploadArea = document.querySelector('.upload-area');
+                uploadArea.innerHTML = `
+                    <i class="fas fa-check-circle" style="font-size: 3rem; color: #27ae60; margin-bottom: 1rem;"></i>
+                    <h3>已選擇檔案</h3>
+                    <p><strong>${file.name}</strong></p>
+                    <p>大小: ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <input type="file" name="file" accept=".pdf,.docx,.xls,.xlsx,.csv,.txt" style="margin-top: 1rem;" />
+                `;
+            }
+        }); {% endcomment %}
+        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const uploadArea = document.querySelector('.upload-area');
+                uploadArea.querySelector('h3').textContent = "已選擇檔案";
+                uploadArea.querySelector('p').innerHTML = `<strong>${file.name}</strong> (大小 ${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            }
+        });
+        // Add loading state to form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<div class="loading"></div> 匯入中...';
+            submitBtn.disabled = true;
+        });
+
+        // Close window function
+        function closeWindow() {
+            // Try to close the window if it was opened by script
+            if (window.opener) {
+                window.close();
+            } else {
+                // If can't close, redirect to parent or show message
+                if (window.parent && window.parent !== window) {
+                    // If in iframe, try to close parent modal
+                    window.parent.postMessage('closeModal', '*');
+                } else {
+                    // Fallback: go back or show alert
+                    if (history.length > 1) {
+                        history.back();
+                    } else {
+                        alert('請手動關閉此分頁');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

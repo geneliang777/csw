@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>菜單列表</title>
+</head>
+<body>
+    <h1>菜單列表</h1>
+    <ul>
+        {% for menu in menus %}
+            <li><a href="{{ menu.url }}">{{ menu.name }}</a></li>
+        {% empty %}
+            <li>目前沒有任何菜單</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
+
+
+{% comment %} <!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>選單維護</title>
+</head>
+<body>
+    <h1>選單維護</h1>
+    <p><a href="{% url 'menu_add' %}">➕ 新增選單</a></p>
+    <table border="1" cellpadding="6">
+        <tr>
+            <th>名稱</th>
+            <th>連結</th>
+            <th>父選單</th>
+            <th>排序</th>
+            <th>啟用</th>
+            <th>操作</th>
+        </tr>
+        {% for menu in menus %}
+        <tr>
+            <td>{{ menu.title }}</td>
+            <td>{{ menu.url }}</td>
+            <td>{{ menu.parent }}</td>
+            <td>{{ menu.order }}</td>
+            <td>{{ menu.is_active|yesno:"✔,✖" }}</td>
+            <td>
+                <a href="{% url 'menu_edit' menu.id %}">✏ 編輯</a> |
+                <a href="{% url 'menu_delete' menu.id %}">🗑 刪除</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">尚無選單</td></tr>
+        {% endfor %}
+    </table>
+</body>
+</html> {% endcomment %}

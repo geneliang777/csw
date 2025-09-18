@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <title>photo</title>
+   
+  </head>
+  <body>
+    <!-- Sidebar -->
+   
+
+    <!-- Main -->
+    <div class="main">
+      {% if user.is_authenticated %}
+        <p>
+          哈囉，{{ user.username }}！ <a href="{% url 'logout' %}">登出</a>
+        </p>
+      {% else %}
+        <p>
+          <a href="{% url 'login' %}">登入</a>
+        </p>
+      {% endif %}
+
+      <p>這裡是照片轉動畫生成。</p>
+    </div>
+  </body>
+</html>

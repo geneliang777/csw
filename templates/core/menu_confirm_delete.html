@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>刪除選單</title>
+</head>
+<body>
+    <h1>確定要刪除「{{ menu.title }}」嗎？</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">確定刪除</button>
+        <a href="{% url 'menu_list' %}">取消</a>
+    </form>
+</body>
+</html>

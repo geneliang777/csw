@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title|default:"新增專案" }} - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-plus-circle" style="color: #3498db; margin-right: 0.5rem;"></i>
+            {{ title|default:"新增專案" }}
+        </h1>
+        
+        <form method="post">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="{{ form.project_code.id_for_label }}">
+                    <i class="fas fa-code"></i>
+                    專案代碼
+                </label>
+                {{ form.project_code }}
+                {% if form.project_code.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ form.project_code.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">
+                        <i class="fas fa-project-diagram"></i>
+                        專案名稱
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ form.name.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.llm_model.id_for_label }}">
+                        <i class="fas fa-brain"></i>
+                        LLM 模型
+                    </label>
+                    {{ form.llm_model }}
+                    {% if form.llm_model.errors %}
+                        <div class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            {{ form.llm_model.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.description.id_for_label }}">
+                    <i class="fas fa-align-left"></i>
+                    專案描述
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ form.description.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.role_prompt.id_for_label }}">
+                    <i class="fas fa-user-tag"></i>
+                    角色指令定義
+                </label>
+                {{ form.role_prompt }}
+                {% if form.role_prompt.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ form.role_prompt.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.response_template.id_for_label }}">
+                    <i class="fas fa-file-alt"></i>
+                    回應模板配置
+                </label>
+                {{ form.response_template }}
+                {% if form.response_template.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ form.response_template.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.example_prompts.id_for_label }}">
+                    <i class="fas fa-lightbulb"></i>
+                    範例提示詞（每行一個）
+                </label>
+                {{ form.example_prompts }}
+                {% if form.example_prompts.errors %}
+                    <div class="error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ form.example_prompts.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-save"></i>
+                    儲存專案
+                </button>
+                <a href="javascript:history.back()" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    回上頁
+                </a>
+                <a class="btn btn-secondary" href="/">
+                    <i class="fas fa-menu"></i>
+                    回首頁
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        // Add form validation feedback
+        document.querySelectorAll('input, textarea, select').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (this.value.trim() === '') {
+                    this.classList.add('field-error');
+                } else {
+                    this.classList.remove('field-error');
+                }
+            });
+        });
+
+        // Add loading state to form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<div class="loading"></div> 儲存中...';
+            submitBtn.disabled = true;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>開始爬蟲 - {{ project.name }} - CSW Console</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/projects.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <i class="fas fa-spider" style="color: #3498db; margin-right: 0.5rem;"></i>
+            開始爬蟲 - {{ project.name }}
+        </h1>
+
+        {% if error %}
+            <div class="error">
+                <i class="fas fa-exclamation-triangle"></i>
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="url"><i class="fas fa-link"></i> 目標網址</label>
+                <input type="url" name="url" placeholder="https://example.com" required />
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-play"></i>
+                    開始爬蟲
+                </button>
+                <a class="btn btn-secondary" href="{% url 'project_import' pk=project.pk %}">
+                    <i class="fas fa-arrow-left"></i>
+                    回匯入頁
+                </a>
+            </div>
+        </form>
+
+        {% if result %}
+        <div class="info" style="margin-top:1rem;">
+            <i class="fas fa-check-circle"></i>
+            已建立文件：ID {{ result.doc_id }}，檔名 {{ result.filename }}
+            <a class="btn btn-primary" style="margin-left:0.5rem" href="{% url 'project_import_detail' pk=project.pk doc_pk=result.doc_id %}">查看</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+</body>
+</html>
+
+

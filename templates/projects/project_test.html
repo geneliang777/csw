@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <title>測試專案 - {{ obj.project_code|default:obj.name }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; max-width:760px; margin:auto; }
+    textarea { width:100%; box-sizing:border-box; padding:8px; font-size:14px; }
+    .examples { margin-top:12px; }
+    .example-item { padding:8px; border-radius:6px; margin-bottom:6px; cursor:pointer; border:1px dashed #ccc; }
+    .example-item:hover { background:#f3f3f3; }
+    button { padding:8px 12px; border:0; border-radius:6px; background:#2c3e50; color:#fff; }
+    #result { margin-top:12px; padding:10px; border-radius:6px; background:#fafafa; border:1px solid #eee; white-space:pre-wrap; }
+
+    /* Button-like link styles */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:6px; text-decoration:none; font-size:14px; }
+    .btn-secondary { background:#6c757d; color:#fff; }
+    .btn-secondary:hover { background:#5a6268; }
+
+    /* 整體左右兩欄容器 */
+    .result-container {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start; /* 頂端對齊 */
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    /* 左邊欄位（文字 + 按鈕） */
+    .result-column {
+      flex: 2; /* 讓左欄佔比較大空間 */
+      min-width: 280px;
+    }
+
+    /* 右邊欄位（圖片） */
+    .image-column {
+      flex: 1; /* 右欄比較窄 */
+      max-width: 360px;
+    }
+
+    /* 生成圖片區塊 */
+    #image-output img {
+      max-width: 100%;
+      border: 1px solid #eee;
+      border-radius: 6px;
+    }
+
+    /* 響應式：窄螢幕改為上下堆疊 */
+    @media (max-width: 800px) {
+      .result-container {
+        flex-direction: column;
+      }
+      .image-column {
+        max-width: 100%;
+      }
+    }
+    </style>
+</head>
+<body>
+  <h2>測試：{{ obj.project_code }} - {{ obj.name }}</h2>
+
+  <label for="question">問題（可直接鍵入或點下方範例帶入）：</label>
+  <textarea id="question" rows="4" placeholder="輸入問題..."></textarea>
+  <div style="margin-top:8px;">
+    <button id="sendBtn" onclick="sendTest()">送出測試</button>
+    <a href="javascript:history.back()" class="btn btn-secondary" style="margin-left:8px;">
+      ← 回上頁
+    </a>
+
+
+
+
+  
+  </div>
+
+  <div class="examples">
+    <h4>範例提示詞</h4>
+    {% if examples %}
+      {% for ex in examples %}
+        <div class="example-item" onclick="pickExample('{{ ex|escapejs|slice:':2000'|safe }}')">{{ ex }}</div>
+      {% endfor %}
+    {% else %}
+      <p style="color:#666">此專案尚未設定任何範例提示詞。</p>
+    {% endif %}
+  </div>
+  
+  <h4>回答</h4>
+  
+  <!-- 新增：左右欄容器 -->
+  <div class="result-container">
+    <!-- 左欄：文字回答 + 產生圖片按鈕 -->
+    <div class="result-column">
+      <div id="result" aria-live="polite" style="display:none;"></div>
+  
+      <!-- 按鈕放在 #result 正下方 -->
+      <div id="image-tools" style="margin-top:8px; display:none;">
+        <button id="genImgBtn" onclick="generateImage()">產生圖片</button>
+      </div>
+    </div>
+  
+    <!-- 右欄：顯示生成圖片 -->
+    <div class="image-column">
+      <div id="image-output" style="margin-top:12px; display:none;">
+        <img id="genImage" alt="生成圖片" />
+        <div style="margin-top:6px;">
+          <a id="downloadLink" class="btn btn-secondary" download="generated.png">下載圖片</a>
+        </div>
+        <div style="margin-top:6px;">
+          <a id="downloadLink" class="btn btn-secondary" download="generated.png">產生影片</a>
+        </div>
+      </div>
+    </div>
+  </div>
+   
+<script>
+// 1) pickExample: 帶入上方欄位（並 focus）
+function pickExample(text) {
+  document.getElementById('question').value = text;
+  document.getElementById('question').focus();
+}
+
+// 2) 取得 CSRF token（cookie）
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)'));
+  return match ? decodeURIComponent(match.pop()) : null;
+}
+
+// 3) sendTest: AJAX POST to test_api
+async function sendTest() {
+  const q = document.getElementById('question').value.trim();
+  if (!q) { alert('請輸入問題'); return; }
+
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  btn.textContent = '送出中...';
+
+  try {
+    const resp = await fetch("{% url 'project_test_api' pk=obj.pk %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: new URLSearchParams({ question: q }).toString(),
+      credentials: 'same-origin'
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      alert(data.error || '伺服器錯誤');
+      return;
+    }
+
+    const resultEl = document.getElementById('result');
+    resultEl.style.display = 'block';
+    resultEl.textContent = data.answer;
+    // 顯示產生圖片按鈕
+    document.getElementById('image-tools').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert('網路錯誤，請稍後再試');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '送出測試';
+  }
+}
+
+// 4) 從 result 中抓 img_prompt（支援常見格式，如 "img_prompt: ...." 或 JSON 欄位）
+function extractMjPromptFromResult(text) {
+  let t = text.trim();
+  // 若包含程式碼區塊，取出第一個 ```...``` 的內容（優先 json 區塊）
+  const fenceJson = t.match(/```\s*json\s*\n([\s\S]*?)```/i);
+  if (fenceJson) {
+    t = fenceJson[1].trim();
+  } else {
+    const fence = t.match(/```\s*\n([\s\S]*?)```/);
+    if (fence) t = fence[1].trim();
+  }
+
+  // 1) img_prompt: xxx（取到行尾）
+  const m1 = t.match(/img_prompt\s*[:：]\s*(.+)/i);
+  if (m1) return m1[1].trim();
+
+  // 2) 嘗試 JSON 解析
+  try {
+    const obj = JSON.parse(t);
+    if (obj && obj.img_prompt) return String(obj.img_prompt);
+  } catch (_) {}
+
+  // 3) 萬用正則從全文抓 "img_prompt": "..."
+  const m2 = t.match(/"img_prompt"\s*:\s*"([\s\S]*?)"/i);
+  if (m2) return m2[1].trim();
+
+  return '';
+}
+
+// 5) 呼叫後端產生圖片
+async function generateImage() {
+  const resultText = document.getElementById('result').textContent || '';
+  const mjPrompt = extractMjPromptFromResult(resultText);
+  if (!mjPrompt) { alert('找不到 img_prompt，請確認回答內容'); return; }
+
+  const btn = document.getElementById('genImgBtn');
+  btn.disabled = true;
+  btn.textContent = '產生中...';
+  try {
+    const resp = await fetch("{% url 'project_generate_image_api' pk=obj.pk %}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: new URLSearchParams({ img_prompt: mjPrompt }).toString(),
+      credentials: 'same-origin'
+    });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || '圖片產生失敗'); return; }
+
+    const dataUrl = `data:${data.content_type || 'image/png'};base64,${data.image_base64}`;
+    const imgEl = document.getElementById('genImage');
+    const dl = document.getElementById('downloadLink');
+    imgEl.src = dataUrl;
+    dl.href = dataUrl;
+    document.getElementById('image-output').style.display = 'block';
+  } catch (err) {
+    console.error(err);
+    alert('網路錯誤，請稍後再試');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '產生圖片';
+  }
+}
+
+</script>
+</body>
+</html>
