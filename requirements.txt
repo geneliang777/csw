@@ -1,7 +1,6 @@
-django
-requests
-BeautifulSoup
 google-generativeai
 numpy
-
+django==5.2.6
+requests==2.32.5
+beautifulsoup4==4.12.3
 

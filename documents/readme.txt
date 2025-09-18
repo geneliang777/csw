@@ -1,8 +1,10 @@
-gemine_ai_key=   AIzaSyBwyiW7ZBOshQzTd3mjRv8fTenqunNkqAo
+重新安裝，請執行
+pip install -r requirements.txt
 
-
+Django 教學
 https://www.youtube.com/watch?v=tB3kwu2E0GM&list=PL49YuNfb-9OfL4EUPcFhPej_GUJFQO9xe
 
+gemine_ai_key=   AIzaSyBwyiW7ZBOshQzTd3mjRv8fTenqunNkqAo
 
 
 開新專案
@@ -30,22 +32,15 @@ python manage.py migrate
 
 
 
-
-
 從 Cursor 推到 GitHub」的簡單指令清單
-
 
 git add .
 
-
 （把所有修改、新增、刪除的檔案加入暫存）
-
 
 git commit -m "這裡寫你的修改說明"
 
-
 範例：git commit -m "修正登入錯誤 & 新增使用者設定頁面"
-
 
 git push origin main
 
