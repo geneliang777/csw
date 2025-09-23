@@ -1,28 +1,586 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <title>photo</title>
-   
-  </head>
-  <body>
-    <!-- Sidebar -->
-   
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VlogGenius - 您的個人Vlog製作器</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .file-uploader {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .file-uploader.dragover {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+        }
+        .thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .step-indicator .active {
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+        }
+        .step-indicator .active-line {
+            background-color: #4f46e5;
+        }
+        .placeholder-image {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        .music-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .music-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .music-item.selected {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+        }
+        /* Toggle switch styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #4f46e5;
+        }
+        input:focus + .slider {
+            box-shadow: 0 0 1px #4f46e5;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
 
-    <!-- Main -->
-    <div class="main">
-      {% if user.is_authenticated %}
-        <p>
-          哈囉，{{ user.username }}！ <a href="{% url 'logout' %}">登出</a>
-        </p>
-      {% else %}
-        <p>
-          <a href="{% url 'login' %}">登入</a>
-        </p>
-      {% endif %}
+    {% verbatim %}
+    <div id="app" class="min-h-screen p-8 flex flex-col items-center">
+        <!-- Header -->
+        <header class="w-full container mx-auto mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">VlogGenius</h1>
+            <p class="text-lg text-gray-600">讓回憶，一鍵成片。</p>
+        </header>
 
-      <p>這裡是照片轉動畫生成。</p>
+        <!-- Main Content -->
+        <main class="w-full container mx-auto bg-white rounded-xl shadow-lg p-6 lg:p-10">
+            <!-- 增加 CSRF token，以保護表單提交 -->
+            <!-- 這裡不能用 Vue.js 的語法，因為它需要 Django 來解析 -->
+
+            <!-- Step Navigation -->
+            <div class="step-indicator flex justify-between items-center mb-10 text-center text-gray-500">
+                <div class="flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors duration-300" :class="{'active': currentStep >= 1}">
+                        1
+                    </div>
+                    <span>上傳素材</span>
+                </div>
+                <div class="flex-1 relative">
+                    <div class="absolute inset-y-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transition-colors duration-300" :class="{'active-line': currentStep >= 2}"></div>
+                </div>
+                <div class="flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors duration-300" :class="{'active': currentStep >= 2}">
+                        2
+                    </div>
+                    <span>設定風格</span>
+                </div>
+                 <div class="flex-1 relative">
+                    <div class="absolute inset-y-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transition-colors duration-300" :class="{'active-line': currentStep >= 3}"></div>
+                </div>
+                <div class="flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors duration-300" :class="{'active': currentStep >= 3}">
+                        3
+                    </div>
+                    <span>設定音樂</span>
+                </div>
+                 <div class="flex-1 relative">
+                    <div class="absolute inset-y-1/2 left-0 w-full h-1 bg-gray-200 -z-10 transition-colors duration-300" :class="{'active-line': currentStep >= 4}"></div>
+                </div>
+                <div class="flex-1">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2 transition-colors duration-300" :class="{'active': currentStep >= 4}">
+                        4
+                    </div>
+                    <span>生成影片</span>
+                </div>
+            </div>
+
+            <!-- Step 1: Upload Files -->
+            <div v-if="currentStep === 1">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-6">步驟 1: 上傳您的照片與影片</h2>
+                <div class="file-uploader rounded-lg p-8 cursor-pointer flex flex-col items-center justify-center text-gray-500 hover:border-indigo-500 hover:text-indigo-500"
+                    @dragover.prevent="onDragOver"
+                    @dragleave.prevent="onDragLeave"
+                    @drop.prevent="onDrop"
+                    :class="{'dragover': isDragging}">
+                    <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-4-4v0a4 4 0 014-4h8a4 4 0 014 4v0a4 4 0 01-4 4h-1"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16V4m0 12l-4-4m4 4l4-4"></path></svg>
+                    <p class="text-xl font-medium">拖曳檔案至此或</p>
+                    <label for="file-input" class="text-indigo-600 font-semibold cursor-pointer mt-2">點擊上傳</label>
+                    <input type="file" id="file-input" multiple @change="onFileChange" class="hidden" accept="image/*,video/*">
+                </div>
+                <div v-if="files.length > 0" class="mt-8 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div v-for="(file, index) in files" :key="index" class="relative group">
+                        <img :src="file.preview" :alt="file.name" class="thumbnail transition-transform transform group-hover:scale-105">
+                        <button @click="removeFile(index)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <button @click="nextStep" :disabled="files.length === 0" class="mt-8 w-full py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-300">
+                    下一步
+                </button>
+            </div>
+
+            <!-- Step 2: Configure Vlog Style -->
+            <div v-if="currentStep === 2">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-6">步驟 2: 設定Vlog風格與效果</h2>
+                
+                <!-- Theme Selection -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">選擇主題</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <label v-for="theme in themes" :key="theme.name" class="cursor-pointer">
+                            <input type="radio" v-model="selectedTheme" :value="theme.name" class="hidden peer">
+                            <div class="relative w-full h-32 rounded-lg overflow-hidden border-2 border-gray-200 transition-colors duration-200 peer-checked:border-indigo-600">
+                                <img :src="theme.image" :alt="theme.name" class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white font-semibold text-lg opacity-0 peer-checked:opacity-100 transition-opacity duration-200">
+                                    {{ theme.label }}
+                                </div>
+                            </div>
+                            <p class="text-center mt-2 text-gray-600 peer-checked:text-indigo-600">{{ theme.label }}</p>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Image Post-processing Options -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">圖片後製選項</h3>
+                    <div class="flex flex-col md:flex-row md:items-center gap-4">
+                        <div class="flex-1">
+                            <label for="filter-select" class="block text-sm font-medium text-gray-700 mb-2">濾鏡風格</label>
+                            <select id="filter-select" v-model="selectedFilter" class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                                <option value="none">無</option>
+                                <option value="vintage">復古</option>
+                                <option value="bw">黑白</option>
+                                <option value="vibrant">鮮豔</option>
+                            </select>
+                        </div>
+                        <!-- Aspect Ratio Selection as Buttons -->
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">裁切比例</label>
+                            <div class="flex space-x-2">
+                                <button v-for="ratio in aspectRatios" :key="ratio"
+                                        @click="selectedAspectRatio = ratio"
+                                        class="px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-indigo-50 transition-colors duration-200"
+                                        :class="{'bg-indigo-600 text-white hover:bg-indigo-700': selectedAspectRatio === ratio}">
+                                    {{ ratio }}
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex-1 flex flex-col items-start md:items-center">
+                            <span class="block text-sm font-medium text-gray-700 mb-2">智慧裁切</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" v-model="smartCropEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Scene Generation -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">圖片套用AI場景 (選填)</h3>
+                    <div class="flex space-x-2 mb-4">
+                        <input type="text" v-model="scenePrompt" placeholder="例如：熱帶雨林, 賽博龐克城市, 奇幻城堡" class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <button @click="applyAIScene" :disabled="!scenePrompt || isGeneratingAIScene" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-300">
+                            <span v-if="!isGeneratingAIScene">生成場景</span>
+                            <div v-else class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </button>
+                    </div>
+                    <div v-if="aiSceneImages.length > 0" class="w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm transition-all duration-500 grid grid-cols-2 gap-4 p-4 bg-gray-50">
+                        <div v-for="(image, index) in aiSceneImages" :key="index" class="relative group cursor-pointer" @click="selectedAISceneImage = image">
+                            <img :src="image" alt="AI生成的場景" class="w-full h-auto rounded-lg transition-transform transform group-hover:scale-105" :class="{'ring-4 ring-indigo-500': selectedAISceneImage === image}">
+                            <div v-if="selectedAISceneImage === image" class="absolute top-2 right-2 p-1 bg-indigo-600 text-white rounded-full">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transition Effects -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">選擇轉場效果</h3>
+                    <div class="flex flex-wrap gap-2">
+                        <button v-for="transition in transitionEffects" :key="transition"
+                                @click="selectedTransition = transition"
+                                class="px-4 py-2 rounded-full border border-gray-300 text-gray-700 hover:bg-indigo-50 transition-colors duration-200"
+                                :class="{'bg-indigo-600 text-white hover:bg-indigo-700': selectedTransition === transition}">
+                            {{ transition }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button @click="prevStep" class="py-3 px-6 text-indigo-600 font-semibold rounded-lg border border-indigo-600 hover:bg-indigo-50 transition-colors duration-300">
+                        上一步
+                    </button>
+                    <button @click="nextStep" :disabled="!selectedTheme" class="py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-300">
+                        下一步
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 3: Configure Music -->
+            <div v-if="currentStep === 3">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-6">步驟 3: 設定背景音樂</h2>
+
+                <!-- Built-in Music -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">內建音樂</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div v-for="music in builtInMusic" :key="music.name" class="music-item rounded-lg p-4 border border-gray-200" :class="{'selected': selectedMusic === music.name}" @click="selectedMusic = music.name">
+                            <p class="text-lg font-medium">{{ music.name }}</p>
+                            <p class="text-sm text-gray-500">{{ music.style }}</p>
+                            <button @click.stop="toggleMusicPlay(music.url, music.name)" class="mt-2 text-indigo-600 hover:text-indigo-800 transition-colors flex items-center">
+                                <svg v-if="(currentPlayingMusic !== music.name || audioPlayer.paused)" class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                <svg v-else class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                                {{ (currentPlayingMusic === music.name && !audioPlayer.paused) ? '暫停' : '試聽' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- AI Generated Music -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">AI 生成音樂</h3>
+                    <div class="flex space-x-2 mb-4">
+                        <input type="text" v-model="musicPrompt" placeholder="例如：充滿活力的流行樂" class="flex-1 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <button @click="generateAIMusic" :disabled="!musicPrompt || isGeneratingAIMusic" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-300">
+                            <span v-if="!isGeneratingAIMusic">生成音樂</span>
+                            <div v-else class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        </button>
+                    </div>
+                    <div v-if="aiMusic.name" class="music-item rounded-lg p-4 border border-gray-200" :class="{'selected': selectedMusic === aiMusic.name}" @click="selectedMusic = aiMusic.name">
+                        <p class="text-lg font-medium">{{ aiMusic.name }}</p>
+                        <p class="text-sm text-gray-500">{{ aiMusic.style }}</p>
+                        <button @click.stop="toggleMusicPlay(aiMusic.url, aiMusic.name)" class="mt-2 text-indigo-600 hover:text-indigo-800 transition-colors flex items-center">
+                             <svg v-if="(currentPlayingMusic !== aiMusic.name || audioPlayer.paused)" class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                             <svg v-else class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                            {{ (currentPlayingMusic === aiMusic.name && !audioPlayer.paused) ? '暫停' : '試聽' }}
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- User Uploaded Music -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4">上傳音樂</h3>
+                    <div class="flex items-center space-x-2">
+                        <label for="music-upload" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold cursor-pointer hover:bg-gray-300 transition-colors">選擇檔案</label>
+                        <span class="text-gray-500 truncate" v-if="uploadedMusic">{{ uploadedMusic.name }}</span>
+                        <input type="file" id="music-upload" @change="onMusicFileChange" class="hidden" accept="audio/*">
+                    </div>
+                    <div v-if="uploadedMusic" class="music-item rounded-lg p-4 border border-gray-200 mt-4" :class="{'selected': selectedMusic === uploadedMusic.name}" @click="selectedMusic = uploadedMusic.name">
+                        <p class="text-lg font-medium">{{ uploadedMusic.name }}</p>
+                        <button @click.stop="toggleMusicPlay(uploadedMusic.url, uploadedMusic.name)" class="mt-2 text-indigo-600 hover:text-indigo-800 transition-colors flex items-center">
+                            <svg v-if="(currentPlayingMusic !== uploadedMusic.name || audioPlayer.paused)" class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                            <svg v-else class="w-6 h-6 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path></svg>
+                            {{ (currentPlayingMusic === uploadedMusic.name && !audioPlayer.paused) ? '暫停' : '試聽' }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between mt-8">
+                    <button @click="prevStep" class="py-3 px-6 text-indigo-600 font-semibold rounded-lg border border-indigo-600 hover:bg-indigo-50 transition-colors duration-300">
+                        上一步
+                    </button>
+                    <button @click="nextStep" :disabled="!selectedMusic" class="py-3 px-6 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition-colors duration-300 disabled:bg-indigo-300">
+                        生成影片
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 4: Generating Vlog -->
+            <div v-if="currentStep === 4">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-6">步驟 4: 影片生成中...</h2>
+                <div class="text-center">
+                    <div class="w-20 h-20 border-4 border-indigo-400 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="text-xl text-gray-600 font-medium mb-2">請稍候，我們正在為您創作中...</p>
+                    <p class="text-sm text-gray-500">這可能需要幾分鐘的時間，取決於您的檔案大小。</p>
+                </div>
+            </div>
+
+            <!-- Modal for preview/result -->
+            <div v-if="isModalOpen" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+                <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">您的Vlog已完成！</h3>
+                        <div class="w-full rounded-lg overflow-hidden mb-4">
+                            <!-- This will be a placeholder for the generated video -->
+                            <video controls class="w-full bg-gray-200" style="height: 300px;">
+                                <source src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4">
+                                您的瀏覽器不支援影片標籤。
+                            </video>
+                        </div>
+                        <div class="flex justify-end space-x-4">
+                            <button @click="closeModal" class="py-2 px-6 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors">
+                                關閉
+                            </button>
+                            <button @click="downloadVideo" class="py-2 px-6 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                                下載影片
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
-  </body>
+    {% endverbatim %}
+
+    <!-- Vue.js for interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                currentStep: 1,
+                isDragging: false,
+                files: [],
+                selectedTheme: null,
+                selectedFilter: 'none',
+                selectedAspectRatio: '16:9',
+                aspectRatios: ['16:9', '9:16'],
+                smartCropEnabled: false,
+                selectedTransition: null,
+                selectedMusic: null,
+                isModalOpen: false,
+                scenePrompt: '',
+                isGeneratingAIScene: false,
+                aiSceneImages: [],
+                selectedAISceneImage: null,
+                musicPrompt: '',
+                isGeneratingAIMusic: false,
+                aiMusic: {},
+                uploadedMusic: null,
+                audioPlayer: new Audio(),
+                currentPlayingMusic: null,
+                themes: [
+                    { name: 'travel', label: '旅遊Vlog', image: 'https://placehold.co/400x300/4f46e5/ffffff?text=旅遊Vlog' },
+                    { name: 'growth', label: '成長紀錄', image: 'https://placehold.co/400x300/f59e0b/ffffff?text=成長紀錄' },
+                    { name: 'wedding', label: '婚禮回憶', image: 'https://placehold.co/400x300/ec4899/ffffff?text=婚禮回憶' },
+                    { name: 'daily', label: '日常分享', image: 'https://placehold.co/400x300/10b981/ffffff?text=日常分享' }
+                ],
+                builtInMusic: [
+                    { name: '輕鬆小品', style: 'Lo-Fi', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+                    { name: '陽光之旅', style: '流行', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+                    { name: '溫馨回憶', style: '抒情', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+                    { name: '史詩配樂', style: '史詩', url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+                ],
+                transitionEffects: ['淡入淡出', '縮放', '旋轉', '擦除', '復古膠片']
+            },
+            methods: {
+                onDragOver() {
+                    this.isDragging = true;
+                },
+                onDragLeave() {
+                    this.isDragging = false;
+                },
+                onDrop(e) {
+                    this.isDragging = false;
+                    this.addFiles(e.dataTransfer.files);
+                },
+                onFileChange(e) {
+                    this.addFiles(e.target.files);
+                },
+                addFiles(fileList) {
+                    for (let i = 0; i < fileList.length; i++) {
+                        const file = fileList[i];
+                        if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+                            this.files.push({
+                                file: file,
+                                name: file.name,
+                                preview: URL.createObjectURL(file)
+                            });
+                        }
+                    }
+                },
+                removeFile(index) {
+                    URL.revokeObjectURL(this.files[index].preview);
+                    this.files.splice(index, 1);
+                },
+                nextStep() {
+                    if (this.currentStep < 4) {
+                        this.currentStep++;
+                        if (this.currentStep === 4) {
+                            this.generateVlog();
+                        }
+                    }
+                },
+                prevStep() {
+                    if (this.currentStep > 1) {
+                        this.currentStep--;
+                    }
+                },
+                applyAIScene() {
+                    if (!this.scenePrompt) return;
+                    this.isGeneratingAIScene = true;
+                    this.aiSceneImages = [];
+                    this.selectedAISceneImage = null;
+                    
+                    const placeholderText = encodeURIComponent(this.scenePrompt);
+                    const baseImageUrl = `https://placehold.co/300x200/312e81/ffffff?text=${placeholderText}`;
+                    
+                    setTimeout(() => {
+                        this.aiSceneImages = [
+                            baseImageUrl + '_1',
+                            baseImageUrl + '_2',
+                            baseImageUrl + '_3',
+                            baseImageUrl + '_4'
+                        ];
+                        this.isGeneratingAIScene = false;
+                    }, 2000); // 模擬2秒生成時間
+                },
+                generateAIMusic() {
+                    if (!this.musicPrompt) return;
+                    this.isGeneratingAIMusic = true;
+                    this.aiMusic = {};
+                    
+                    setTimeout(() => {
+                        this.aiMusic = {
+                            name: `AI生成 - ${this.musicPrompt}`,
+                            style: 'AI生成',
+                            url: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3'
+                        };
+                        this.isGeneratingAIMusic = false;
+                    }, 3000); // 模擬3秒生成時間
+                },
+                onMusicFileChange(e) {
+                    const file = e.target.files[0];
+                    if (file && file.type.startsWith('audio/')) {
+                        if (this.uploadedMusic && this.uploadedMusic.url) {
+                            URL.revokeObjectURL(this.uploadedMusic.url);
+                        }
+                        this.uploadedMusic = {
+                            name: file.name,
+                            url: URL.createObjectURL(file)
+                        };
+                        this.selectedMusic = this.uploadedMusic.name;
+                    }
+                },
+                toggleMusicPlay(url, name) {
+                    if (this.currentPlayingMusic === name && !this.audioPlayer.paused) {
+                        this.audioPlayer.pause();
+                    } else {
+                        this.audioPlayer.pause();
+                        this.audioPlayer.src = url;
+                        this.audioPlayer.play();
+                        this.currentPlayingMusic = name;
+                    }
+                },
+                generateVlog() {
+                    // Simulate API call to generate video
+                    console.log('Generating video with the following settings:');
+                    console.log('Files:', this.files.map(f => f.name));
+                    console.log('Theme:', this.selectedTheme);
+                    console.log('Filter:', this.selectedFilter);
+                    console.log('Aspect Ratio:', this.selectedAspectRatio); // 新增的 aspect ratio
+                    console.log('Smart Crop:', this.smartCropEnabled);
+                    console.log('AI Scene Image:', this.selectedAISceneImage);
+                    console.log('Music:', this.selectedMusic);
+                    console.log('Transition:', this.selectedTransition);
+                    
+                    // 檢查音樂來源
+                    if (this.selectedMusic === this.uploadedMusic?.name) {
+                        console.log('Selected Music from user upload.');
+                    } else if (this.selectedMusic === this.aiMusic.name) {
+                        console.log('Selected Music from AI generation.');
+                    } else {
+                        console.log('Selected Music is built-in.');
+                    }
+
+                    setTimeout(() => {
+                        this.isModalOpen = true;
+                        this.currentStep = 4;
+                    }, 3000); // 3 seconds delay for demo
+                },
+                closeModal() {
+                    this.isModalOpen = false;
+                    this.currentStep = 1;
+                    this.files = [];
+                    this.selectedTheme = null;
+                    this.selectedFilter = 'none';
+                    this.selectedAspectRatio = '16:9';
+                    this.smartCropEnabled = false;
+                    this.selectedTransition = null;
+                    this.selectedMusic = null;
+                    this.scenePrompt = '';
+                    this.aiSceneImages = [];
+                    this.selectedAISceneImage = null;
+                    this.musicPrompt = '';
+                    this.aiMusic = {};
+                    if (this.uploadedMusic && this.uploadedMusic.url) {
+                        URL.revokeObjectURL(this.uploadedMusic.url);
+                    }
+                    this.uploadedMusic = null;
+                    this.audioPlayer.pause();
+                    this.currentPlayingMusic = null;
+                },
+                downloadVideo() {
+                    const videoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+                    const link = document.createElement('a');
+                    link.href = videoUrl;
+                    link.download = 'my-vlog.mp4';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            }
+        });
+    </script>
+</body>
 </html>
